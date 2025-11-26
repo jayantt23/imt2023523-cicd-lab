@@ -7,37 +7,30 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/jayantt23/imt2023523-cicd-lab'
-            }
-        }
 
         stage('Build') {
             steps {
-                bat 'pip install -r requirements.txt'
+                sh 'pip install -r requirements.txt'
             }
         }
 
         stage('Test') {
             steps {
-                bat 'pytest'
+                sh 'pytest'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %DOCKER_USER%/%IMAGE_NAME%:latest .'
+                sh 'docker build -t $DOCKER_USER/$IMAGE_NAME:latest .'
             }
         }
 
         stage('Push to DockerHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                 usernameVariable: 'USER',
-                                                 passwordVariable: 'PASS')]) {
-                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
-                    bat 'docker push %DOCKER_USER%/%IMAGE_NAME%:latest'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    sh 'docker push $DOCKER_USER/$IMAGE_NAME:latest'
                 }
             }
         }
