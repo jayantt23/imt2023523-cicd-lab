@@ -1,24 +1,29 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.10-slim'
+            args '-u root:root'
+        }
+    }
+
+    environment {
+        DOCKER_USER = "jayantt"
+        IMAGE_NAME = "imt2023523-cicd"
+    }
 
     stages {
-        stage('Setup Python') {
+
+        stage('Install Dependencies') {
             steps {
                 sh '''
-                apt-get update
-                apt-get install -y python3 python3-pip
-                python3 --version
+                python --version
+                pip install --upgrade pip
+                pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                sh 'python3 -m pip install -r requirements.txt'
-            }
-        }
-
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 sh 'pytest || echo "No tests found"'
             }
@@ -26,16 +31,16 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t jayant/app:latest .'
+                sh 'docker build -t $DOCKER_USER/$IMAGE_NAME:latest .'
             }
         }
 
         stage('Push to DockerHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh '''
                         echo $PASS | docker login -u $USER --password-stdin
-                        docker push jayant/app:latest
+                        docker push $DOCKER_USER/$IMAGE_NAME:latest
                     '''
                 }
             }
