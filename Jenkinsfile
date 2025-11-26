@@ -30,7 +30,7 @@ pipeline {
                 sh """
                     . $VENV/bin/activate
                     pip install flake8
-                    flake8 todo.py tests/test_todo.py --count --select=E9,F63,F7,F82 --show-source --statistics
+                    flake8 app.py test_app.py --count --select=E9,F63,F7,F82 --show-source --statistics
                 """
             }
         }
@@ -40,7 +40,7 @@ pipeline {
                 sh """
                     . $VENV/bin/activate
                     pip install pytest pytest-cov
-                    python3 -m pytest tests/test_todo.py -v --junitxml=test-results.xml --cov=todo --cov-report=xml:coverage.xml
+                    python3 -m pytest test_app.py -v --junitxml=test-results.xml --cov=todo --cov-report=xml:coverage.xml
                 """
             }
             post {
