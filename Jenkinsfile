@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = "YOUR_DOCKERHUB_USERNAME"
-        IMAGE_NAME = "rollnumber-cicd"
+        DOCKER_USER = "jayantt"
+        IMAGE_NAME = "IMT2023523-cicd"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/YOUR_USERNAME/rollnumber-cicd-lab.git'
+                git 'https://github.com/jayantt23/imt2023523-cicd-lab'
             }
         }
 
