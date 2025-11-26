@@ -23,8 +23,9 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build - Install Dependencies') {
             steps {
+                echo "Setting up Python virtual environment..."
                 bat """
                 "%PYTHON%" -m venv venv
                 venv\\Scripts\\python.exe -m pip install --upgrade pip
@@ -36,6 +37,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
+                echo "Running tests..."
                 bat """
                 venv\\Scripts\\python.exe -m pytest tests\\test_todo.py -v
                 """
@@ -44,6 +46,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                echo "Building Docker image..."
                 bat """
                 docker build -t %DOCKERHUB_USERNAME%/%IMAGE_NAME%:%IMAGE_TAG% .
                 docker build -t %DOCKERHUB_USERNAME%/%IMAGE_NAME%:latest .
@@ -51,8 +54,9 @@ pipeline {
             }
         }
 
-        stage('Push to DockerHub') {
+        stage('Push to Docker Hub') {
             steps {
+                echo "Authenticating and pushing image to DockerHub..."
                 bat """
                 docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%
                 docker push %DOCKERHUB_USERNAME%/%IMAGE_NAME%:%IMAGE_TAG%
@@ -61,18 +65,24 @@ pipeline {
                 """
             }
         }
+
+        stage('Verify Docker Image') {
+            steps {
+                echo "Verifying Docker image locally..."
+                bat "docker images | findstr %IMAGE_NAME%"
+            }
+        }
     }
 
     post {
-        always {
-            echo "Cleaning workspace..."
-            deleteDir()
-        }
         success {
             echo "✅ Pipeline completed successfully!"
         }
         failure {
             echo "❌ Pipeline failed!"
+        }
+        always {
+            cleanWs()
         }
     }
 }
