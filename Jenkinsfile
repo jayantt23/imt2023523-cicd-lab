@@ -58,16 +58,5 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy Container') {
-            steps {
-                sh '''
-                  docker pull $IMAGE
-                  docker stop ci-cd-demo || true
-                  docker rm ci-cd-demo || true
-                  docker run -d -p 5000:5000 --name ci-cd-demo $IMAGE
-                '''
-            }
-        }
     }
 }
