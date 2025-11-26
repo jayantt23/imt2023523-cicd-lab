@@ -61,8 +61,18 @@ pipeline {
     }
 
     post {
-        always { cleanWs() }
-        success { echo "✅ Pipeline completed successfully!" }
-        failure { echo "❌ Pipeline failed!" }
+    always {
+        node {
+            echo "Cleaning workspace..."
+            cleanWs()
+        }
     }
+    success {
+        echo "✅ Pipeline completed successfully!"
+    }
+    failure {
+        echo "❌ Pipeline failed!"
+    }
+}
+
 }
