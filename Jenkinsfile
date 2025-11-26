@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_USER = "jayantt"
-        IMAGE_NAME = "IMT2023523-cicd"
+        IMAGE_NAME = "imt2023523-cicd"
     }
 
     stages {
@@ -15,27 +15,29 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'pip install -r requirements.txt'
+                bat 'pip install -r requirements.txt'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'pytest'
+                bat 'pytest'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_USER/$IMAGE_NAME:latest .'
+                bat 'docker build -t %DOCKER_USER%/%IMAGE_NAME%:latest .'
             }
         }
 
         stage('Push to DockerHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
-                    sh 'docker push $DOCKER_USER/$IMAGE_NAME:latest'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                                 usernameVariable: 'USER',
+                                                 passwordVariable: 'PASS')]) {
+                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
+                    bat 'docker push %DOCKER_USER%/%IMAGE_NAME%:latest'
                 }
             }
         }
