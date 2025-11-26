@@ -40,7 +40,7 @@ pipeline {
                 sh """
                     . $VENV/bin/activate
                     pip install pytest pytest-cov
-                    python3 -m pytest test_app.py -v --junitxml=test-results.xml --cov=todo --cov-report=xml:coverage.xml
+                    python3 -m pytest test_app.py -v --junitxml=test-results.xml --cov=app --cov-report=xml:coverage.xml
                 """
             }
             post {
