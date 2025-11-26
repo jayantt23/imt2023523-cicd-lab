@@ -18,15 +18,15 @@ from datetime import datetime
 
 
 # Default file to store tasks
-TODO_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.json")
+app_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.json")
 
 
 def load_tasks():
     """Load tasks from the JSON file."""
-    if not os.path.exists(TODO_FILE):
+    if not os.path.exists(app_FILE):
         return []
     try:
-        with open(TODO_FILE, "r", encoding="utf-8") as f:
+        with open(app_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, IOError):
         return []
@@ -34,7 +34,7 @@ def load_tasks():
 
 def save_tasks(tasks):
     """Save tasks to the JSON file."""
-    with open(TODO_FILE, "w", encoding="utf-8") as f:
+    with open(app_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, indent=2)
 
 
