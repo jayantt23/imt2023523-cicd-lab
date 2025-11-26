@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'jayantt'
         IMAGE_NAME = 'IMT2023523-todo-cli'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKERHUB_CREDS = credentials('Docker-Jenkins')
+        DOCKERHUB_CREDS = credentials('docker-creds')
         GITHUB_CREDS    = credentials('github-creds')
     }
     
@@ -61,18 +61,18 @@ pipeline {
     }
 
     post {
-    always {
-        node {
-            echo "Cleaning workspace..."
-            cleanWs()
+        always {
+            node {
+                echo "Cleaning workspace..."
+                cleanWs()
+            }
+        }
+        success {
+            echo "✅ Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed!"
         }
     }
-    success {
-        echo "✅ Pipeline completed successfully!"
-    }
-    failure {
-        echo "❌ Pipeline failed!"
-    }
-}
 
 }
