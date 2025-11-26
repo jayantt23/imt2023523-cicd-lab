@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE = "jayantt/IMT2023523-todo-cli:latest"
+        IMAGE = "jayantt23/IMT2023523-todo-cli:latest"
         VENV = ".venv"
         PYTHON = "python3"
     }
