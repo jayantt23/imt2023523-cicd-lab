@@ -2,72 +2,85 @@ pipeline {
     agent any
 
     environment {
-        IMAGE = "IMT2023523-todo-cli"
+        IMAGE = "jayantt/IMT2023523-todo-cli:latest"
         VENV = ".venv"
-        PYTHON = "/usr/bin/python3" 
+        PYTHON = "python3"
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                  branches: [[name: '*/main']],
-                  userRemoteConfigs: [[
-                    url: 'https://github.com/jayantt23/imt2023523-cicd-lab',
-                    credentialsId: 'github-creds'
-                  ]]
-                ])
+                checkout scm
             }
         }
 
-        stage('Create Virtual Environment') {
+        stage('Setup') {
             steps {
-                sh '$PYTHON -m venv $VENV'
-                sh '$VENV/bin/pip install --upgrade pip'
+                sh """
+                    $PYTHON --version
+                    $PYTHON -m venv $VENV
+                    . $VENV/bin/activate
+                    pip install --upgrade pip
+                """
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Lint') {
             steps {
-                sh '$VENV/bin/pip install -r requirements.txt'
+                sh """
+                    . $VENV/bin/activate
+                    pip install flake8
+                    flake8 todo.py tests/test_todo.py --count --select=E9,F63,F7,F82 --show-source --statistics
+                """
             }
         }
 
-        stage('Run Tests') {
+        stage('Test') {
             steps {
-                sh '$VENV/bin/pytest -v'
+                sh """
+                    . $VENV/bin/activate
+                    pip install pytest pytest-cov
+                    python3 -m pytest tests/test_todo.py -v --junitxml=test-results.xml --cov=todo --cov-report=xml:coverage.xml
+                """
             }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t $IMAGE .'
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                  usernameVariable: 'USER',
-                                                  passwordVariable: 'PASS')]) {
-                    sh '''
-                      echo $PASS | docker login -u $USER --password-stdin
-                      docker push $IMAGE
-                    '''
+            post {
+                always {
+                    junit 'test-results.xml'
+                    archiveArtifacts artifacts: 'coverage.xml', allowEmptyArchive: true
                 }
             }
         }
 
-        stage('Deploy Container') {
+        stage('Docker Build') {
             steps {
-                sh '''
-                  docker pull $IMAGE
-                  docker stop ci-cd-demo || true
-                  docker rm ci-cd-demo || true
-                  docker run -d -p 5000:5000 --name ci-cd-demo $IMAGE
-                '''
+                sh "docker build -t $IMAGE ."
             }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'jayantt23', 
+                                                  usernameVariable: 'DOCKER_USER', 
+                                                  passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $IMAGE
+                        docker logout
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed!'
         }
     }
 }
