@@ -1,26 +1,26 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.10-slim'
-        }
-    }
+    agent any
 
     stages {
-        stage('Build') {
+        stage('Setup Python') {
             steps {
                 sh '''
-                    python --version
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                apt-get update
+                apt-get install -y python3 python3-pip
+                python3 --version
                 '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'python3 -m pip install -r requirements.txt'
             }
         }
 
         stage('Test') {
             steps {
-                sh '''
-                    pytest || echo "No tests found"
-                '''
+                sh 'pytest || echo "No tests found"'
             }
         }
 
