@@ -1,78 +1,73 @@
 pipeline {
     agent any
-    
+
     environment {
-        DOCKERHUB_USERNAME = 'jayantt'
-        IMAGE_NAME = 'IMT2023523-todo-cli'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKERHUB_CREDS = credentials('docker-creds')
-        GITHUB_CREDS    = credentials('github-creds')
+        IMAGE = "IMT2023523-todo-cli"
+        VENV = ".venv"
+        PYTHON = "/usr/bin/python3" 
     }
-    
+
     stages {
+
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                checkout([$class: 'GitSCM',
+                  branches: [[name: '*/main']],
+                  userRemoteConfigs: [[
                     url: 'https://github.com/jayantt23/imt2023523-cicd-lab',
                     credentialsId: 'github-creds'
+                  ]]
+                ])
+            }
+        }
+
+        stage('Create Virtual Environment') {
+            steps {
+                sh '$PYTHON -m venv $VENV'
+                sh '$VENV/bin/pip install --upgrade pip'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh '''
-                python3 -m venv venv
-                . venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                pip install pytest
-                '''
+                sh '$VENV/bin/pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
-                . venv/bin/activate
-                pytest tests/test_todo.py -v
-                '''
+                sh '$VENV/bin/pytest -v'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG .
-                docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:latest .
-                '''
+                sh 'docker build -t $IMAGE .'
             }
         }
 
-        stage('Push to DockerHub') {
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                                  usernameVariable: 'USER',
+                                                  passwordVariable: 'PASS')]) {
+                    sh '''
+                      echo $PASS | docker login -u $USER --password-stdin
+                      docker push $IMAGE
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy Container') {
             steps {
                 sh '''
-                echo "$DOCKERHUB_CREDS_PSW" | docker login -u "$DOCKERHUB_CREDS_USR" --password-stdin
-                docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
-                docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest
-                docker logout
+                  docker pull $IMAGE
+                  docker stop ci-cd-demo || true
+                  docker rm ci-cd-demo || true
+                  docker run -d -p 5000:5000 --name ci-cd-demo $IMAGE
                 '''
             }
         }
     }
-
-    post {
-        always {
-            node {
-                echo "Cleaning workspace..."
-                cleanWs()
-            }
-        }
-        success {
-            echo "✅ Pipeline completed successfully!"
-        }
-        failure {
-            echo "❌ Pipeline failed!"
-        }
-    }
-
 }
